@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, Center, Html } from '@react-three/drei';
 import { observer } from 'mobx-react-lite';
-import { useStore } from '../hooks/useStore';
+import { useMainContext } from '../context/MainContextProvider';
 import ModelViewer from './models/ModelViewer';
 
 const CanvasLoader = () => {
@@ -17,7 +17,7 @@ const CanvasLoader = () => {
 };
 
 const CanvasApp = observer(() => {
-  const { configuratorStore } = useStore();
+  const { design3dManager } = useMainContext();
   
   return (
     <div className="w-full h-full bg-gray-200">
@@ -28,7 +28,7 @@ const CanvasApp = observer(() => {
         
         <Suspense fallback={<CanvasLoader />}>
           <Center>
-            {configuratorStore.glbUrl ? (
+            {design3dManager.configuratorStoreManager.glbUrl ? (
               <ModelViewer />
             ) : null}
           </Center>

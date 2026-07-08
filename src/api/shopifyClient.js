@@ -1,3 +1,5 @@
+import { API_ROUTES } from './apiRoutes';
+
 const domain = import.meta.env.VITE_SHOPIFY_STORE_DOMAIN;
 const storefrontAccessToken = import.meta.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
@@ -11,7 +13,7 @@ export async function fetchProductWith3DMedia(handle) {
     throw new Error('Shopify environment variables are missing.');
   }
 
-  const endpoint = `https://${domain}/api/2024-01/graphql.json`;
+  const endpoint = API_ROUTES.GRAPHQL;
 
   const query = `
     query getProduct3DMedia($handle: String!) {
@@ -29,11 +31,6 @@ export async function fetchProductWith3DMedia(handle) {
                   format
                   mimeType
                 }
-              }
-              ... on GenericFile {
-                id
-                url
-                mimeType
               }
             }
           }
@@ -56,6 +53,7 @@ export async function fetchProductWith3DMedia(handle) {
     });
 
     const json = await response.json();
+    console.log("Product with 3D Media Response:", json);
 
     if (json.errors) {
       throw new Error(json.errors.map((e) => e.message).join(', '));
@@ -77,12 +75,6 @@ export async function fetchProductWith3DMedia(handle) {
         const glbSource = node.sources.find(s => s.format === 'glb' || s.url.endsWith('.glb'));
         if (glbSource) {
           glbUrl = glbSource.url;
-          break;
-        }
-      } else if (node.mediaContentType === 'GENERIC_FILE') {
-        // Sometimes 3D models are uploaded as generic files
-        if (node.url && node.url.endsWith('.glb')) {
-          glbUrl = node.url;
           break;
         }
       }
@@ -108,7 +100,7 @@ export async function fetchAllProducts() {
     throw new Error('Shopify environment variables are missing.');
   }
 
-  const endpoint = `https://${domain}/api/2024-01/graphql.json`;
+  const endpoint = API_ROUTES.GRAPHQL;
 
   const query = `
     query getAllProducts {
@@ -139,6 +131,7 @@ export async function fetchAllProducts() {
     });
 
     const json = await response.json();
+    console.log("All Products Response:", json);
 
     if (json.errors) {
       throw new Error(json.errors.map((e) => e.message).join(', '));

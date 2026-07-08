@@ -1,9 +1,9 @@
 import React, { createContext, useContext } from 'react';
-import RootStore from '../models/RootStore';
+import RootStore from '../StateManager/RootStore';
 
 const StoreContext = createContext(null);
 
-export const StoreProvider = ({ children }) => {
+export const MainContextProvider = ({ children }) => {
   const store = new RootStore();
   return (
     <StoreContext.Provider value={store}>
@@ -12,10 +12,10 @@ export const StoreProvider = ({ children }) => {
   );
 };
 
-export const useStore = () => {
+export const useMainContext = () => {
   const store = useContext(StoreContext);
   if (!store) {
-    throw new Error('useStore must be used within a StoreProvider');
+    throw new Error('useMainContext must be used within a MainContextProvider');
   }
   return store;
 };
