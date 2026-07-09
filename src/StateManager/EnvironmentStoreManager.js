@@ -3,9 +3,10 @@ import { makeAutoObservable } from 'mobx';
 class EnvironmentStoreManager {
   design3dManager;
   
-  envFileName = null;
-  rotation = { x: 0, y: 0, z: 0 };
+  lightMode = 'city';
   intensity = 1;
+  shadows = true;
+  rotation = { x: 0, y: 0, z: 0 };
 
   constructor(design3dManager) {
     this.design3dManager = design3dManager;
@@ -14,20 +15,19 @@ class EnvironmentStoreManager {
     });
   }
 
-  setEnvironmentRules(rules, metafieldData = null) {
-    if (metafieldData && (metafieldData.hdrUrl || metafieldData.envMetafield)) {
-      this.envFileName = metafieldData.hdrUrl || metafieldData.envMetafield?.envFileName || null;
-      this.rotation = metafieldData.envMetafield?.rotation || { x: 0, y: 0, z: 0 };
-      this.intensity = metafieldData.envMetafield?.intensity ?? 1;
-    } else if (rules && rules.environment) {
-      this.envFileName = rules.environment.envFileName || null;
-      this.rotation = rules.environment.rotation || { x: 0, y: 0, z: 0 };
-      this.intensity = rules.environment.intensity ?? 1;
+  setEnvironmentRules(environments) {
+    if (environments) {
+      // In the new schema, environments.file represents the environment URL/Preset
+      this.lightMode = environments.file || 'city';
+      this.intensity = environments.intensity ?? 1.0;
+      this.rotation = environments.rotation || { x: 0, y: 0, z: 0 };
+      this.shadows = environments.shadows ?? true;
     } else {
-      // Default fallback
-      this.envFileName = null;
+      // Default fallback values
+      this.lightMode = 'city';
+      this.intensity = 1.0;
       this.rotation = { x: 0, y: 0, z: 0 };
-      this.intensity = 1;
+      this.shadows = true;
     }
   }
 }

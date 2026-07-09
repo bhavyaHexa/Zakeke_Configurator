@@ -1,11 +1,10 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { fetchProductWith3DMedia, fetchAllProducts } from '../api/shopifyClient';
-import { parseRulesFromDescription } from '../utils/ruleParser';
 
 class LeftSideStore {
   designManager;
   productList = [];
-  activeProductHandle = null;
+  activeProductId = null;
 
   constructor(designManager) {
     this.designManager = designManager;
@@ -22,9 +21,9 @@ class LeftSideStore {
       runInAction(() => {
         this.productList = products;
         this.designManager.rightSideStore.setIsLoading(false);
-        if (products.length > 0 && !this.activeProductHandle) {
-          this.activeProductHandle = products[0].handle;
-          this.fetchProductData(products[0].handle);
+        if (products.length > 0 && !this.activeProductId) {
+          this.activeProductId = products[0].id;
+          this.fetchProductData(products[0].id);
         }
       });
     } catch (error) {
@@ -35,43 +34,58 @@ class LeftSideStore {
     }
   }
 
-  setActiveProductHandle(handle) {
-    this.activeProductHandle = handle;
-    if (handle) {
-      this.fetchProductData(handle);
+  setActiveProductId(id) {
+    this.activeProductId = id;
+    if (id) {
+      this.fetchProductData(id);
     }
   }
 
-  async fetchProductData(handle) {
+  async fetchProductData(id) {
     this.designManager.rightSideStore.setIsLoading(true);
     this.designManager.rightSideStore.setApiError(null);
     
     try {
-      const data = await fetchProductWith3DMedia(handle);
+      const rawData = await fetchProductWith3DMedia(id);
       
       runInAction(() => {
-        this.designManager.rightSideStore.productTitle = data.title;
-        this.designManager.rightSideStore.productDescription = data.description;
+        // Handle database response format where product data could be nested inside a .data property
+        const productDetails = rawData?.data || rawData;
         
-        // Pass 3D related data to Design3dManager -> ConfiguratorStoreManager
+        if (!productDetails) {
+          throw new Error("No product details found in backend response.");
+        }
+
+        this.designManager.rightSideStore.productTitle = productDetails.productName || 'Product';
+        this.designManager.rightSideStore.productDescription = productDetails.sku ? `SKU: ${productDetails.sku}` : '';
+        
         const configuratorManager = this.designManager.rootStore.design3dManager.configuratorStoreManager;
+        configuratorManager.clearConfigurations();
+
+        // Detect GLB Model URL: environments.file or modelMediaId or glbUrl
+        const glbUrl = productDetails.environments?.file || productDetails.modelMediaId || productDetails.glbUrl || null;
         
-        if (data.glbUrl) {
-          configuratorManager.setGlbUrl(data.glbUrl);
+        if (glbUrl) {
+          configuratorManager.setGlbUrl(glbUrl);
         } else {
           this.designManager.rightSideStore.setApiError('No 3D model found for this product.');
           configuratorManager.setGlbUrl(null);
         }
         
-        const parsedRules = parseRulesFromDescription(data.description);
-        configuratorManager.setConfigurationRules(parsedRules);
+        // Save camera options: camera.position maps to defaultAngle [pitch, yaw, roll]
+        const cameraAngle = {
+          defaultAngle: productDetails.camera?.position || [0, 90, 0],
+          zoomLimit: productDetails.cameraAngle?.zoomLimit || [0.5, 4]
+        };
+        configuratorManager.setCameraAngle(cameraAngle);
+
+        // Load mesh customizer configurations: colors and textures
+        configuratorManager.setMeshColorsRules(productDetails.mesh || []);
+        configuratorManager.setMeshTexturesRules(productDetails.textures || []);
         
         // Pass environment rules
         const envManager = this.designManager.rootStore.design3dManager.environmentStoreManager;
-        envManager.setEnvironmentRules(parsedRules, {
-          envMetafield: data.envMetafield,
-          hdrUrl: data.hdrUrl
-        });
+        envManager.setEnvironmentRules(productDetails.environments || null);
         
         this.designManager.rightSideStore.setIsLoading(false);
       });

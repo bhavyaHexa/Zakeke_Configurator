@@ -5,8 +5,15 @@ class ConfiguratorStoreManager {
 
   // Active Configuration State
   glbUrl = null;
-  configurationRules = null;
-  selectedOptions = {};
+  selectedOptions = {};   // meshName -> colorHex
+  selectedTextures = {};  // meshName -> textureUrl
+  
+  // Camera settings
+  cameraAngle = null;
+
+  // Configuration rules from the new database format
+  meshColorsRules = [];    // [{ name, colors: [{ name, hexCode }] }]
+  meshTexturesRules = [];  // [{ name, files: [{ name, url }] }]
 
   constructor(design3dManager) {
     this.design3dManager = design3dManager;
@@ -19,37 +26,57 @@ class ConfiguratorStoreManager {
     this.glbUrl = url;
   }
 
-  setConfigurationRules(rules) {
-    this.configurationRules = rules;
-    
-    // Initialize default selections based on parsed rules
-    const newOptions = {};
-    if (rules && rules.selectColor) {
-      const defaultColor = rules.selectColor.colorOptions && rules.selectColor.colorOptions.length > 0 
-        ? rules.selectColor.colorOptions[0].hex 
-        : null;
-        
-      if (defaultColor && rules.selectColor.targetedMeshNames) {
-        rules.selectColor.targetedMeshNames.forEach(meshName => {
-          newOptions[meshName] = defaultColor;
-        });
-      }
-    }
-    
-    // Fallback for old schema if needed during transition
-    if (rules && rules.areas && !rules.selectColor) {
-      rules.areas.forEach(area => {
-        if (area.colors && area.colors.length > 0) {
-          newOptions[area.meshTargetName] = area.colors[0].hex;
-        }
-      });
-    }
-
-    this.selectedOptions = newOptions;
+  setCameraAngle(cameraAngle) {
+    this.cameraAngle = cameraAngle;
   }
 
-  setOption(key, value) {
-    this.selectedOptions = { ...this.selectedOptions, [key]: value };
+  setMeshColorsRules(meshColorsRules) {
+    this.meshColorsRules = meshColorsRules || [];
+    
+    // Initialize default color selections
+    const newColors = { ...this.selectedOptions };
+    this.meshColorsRules.forEach(rule => {
+      if (rule.colors && rule.colors.length > 0 && !newColors[rule.name]) {
+        newColors[rule.name] = rule.colors[0].hexCode;
+      }
+    });
+    this.selectedOptions = newColors;
+  }
+
+  setMeshTexturesRules(meshTexturesRules) {
+    this.meshTexturesRules = meshTexturesRules || [];
+  }
+
+  setOption(meshName, colorHex) {
+    // Set color option
+    this.selectedOptions = { ...this.selectedOptions, [meshName]: colorHex };
+    
+    // Clear texture for this mesh to avoid overlay overlap
+    if (this.selectedTextures[meshName]) {
+      const newTextures = { ...this.selectedTextures };
+      delete newTextures[meshName];
+      this.selectedTextures = newTextures;
+    }
+  }
+
+  setTextureOption(meshName, textureUrl) {
+    // Set texture option
+    this.selectedTextures = { ...this.selectedTextures, [meshName]: textureUrl };
+    
+    // Clear color for this mesh to allow the texture map to render correctly without tinting
+    if (this.selectedOptions[meshName]) {
+      const newColors = { ...this.selectedOptions };
+      delete newColors[meshName];
+      this.selectedOptions = newColors;
+    }
+  }
+
+  clearConfigurations() {
+    this.selectedOptions = {};
+    this.selectedTextures = {};
+    this.meshColorsRules = [];
+    this.meshTexturesRules = [];
+    this.cameraAngle = null;
   }
 }
 
