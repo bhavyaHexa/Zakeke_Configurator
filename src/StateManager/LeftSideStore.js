@@ -66,6 +66,13 @@ class LeftSideStore {
         const parsedRules = parseRulesFromDescription(data.description);
         configuratorManager.setConfigurationRules(parsedRules);
         
+        // Pass environment rules
+        const envManager = this.designManager.rootStore.design3dManager.environmentStoreManager;
+        envManager.setEnvironmentRules(parsedRules, {
+          envMetafield: data.envMetafield,
+          hdrUrl: data.hdrUrl
+        });
+        
         this.designManager.rightSideStore.setIsLoading(false);
       });
     } catch (error) {

@@ -20,6 +20,21 @@ export async function fetchProductWith3DMedia(handle) {
       product(handle: $handle) {
         title
         descriptionHtml
+        env_metafield: metafield(namespace: "custom", key: "environment") {
+          value
+        }
+        hdr_metafield: metafield(namespace: "custom", key: "hdr") {
+          reference {
+            ... on GenericFile {
+              url
+            }
+            ... on MediaImage {
+              image {
+                url
+              }
+            }
+          }
+        }
         media(first: 10) {
           edges {
             node {
@@ -80,10 +95,23 @@ export async function fetchProductWith3DMedia(handle) {
       }
     }
 
+    let envMetafield = null;
+    if (product.env_metafield && product.env_metafield.value) {
+      try {
+        envMetafield = JSON.parse(product.env_metafield.value);
+      } catch (err) {
+        console.error("Failed to parse env_metafield value:", err);
+      }
+    }
+
+    const hdrUrl = product.hdr_metafield?.reference?.url || product.hdr_metafield?.reference?.image?.url || null;
+
     return {
       title: product.title,
       description: product.descriptionHtml,
       glbUrl: glbUrl,
+      envMetafield: envMetafield,
+      hdrUrl: hdrUrl
     };
   } catch (error) {
     console.error('Error fetching product from Shopify:', error);

@@ -3,17 +3,11 @@ import { observer } from 'mobx-react-lite';
 import { useMainContext } from '../context/MainContextProvider';
 import CanvasApp from '../scene/CanvasApp';
 
+import ColorChangeComponent from '../components/configurator/ColorChangeComponent';
+
 const UIOverlay = observer(() => {
   const { designManager, design3dManager } = useMainContext();
   const rules = design3dManager.configuratorStoreManager.configurationRules;
-
-  const handleGlobalColorChange = (color) => {
-    if (rules && rules.selectColor && rules.selectColor.targetedMeshNames) {
-      rules.selectColor.targetedMeshNames.forEach(meshName => {
-        design3dManager.configuratorStoreManager.setOption(meshName, color);
-      });
-    }
-  };
 
   const handleColorChange = (meshTargetName, color) => {
     design3dManager.configuratorStoreManager.setOption(meshTargetName, color);
@@ -29,29 +23,7 @@ const UIOverlay = observer(() => {
       
       <div className="flex flex-col gap-6 mb-6 overflow-y-auto pr-2">
         {rules?.selectColor ? (
-          <div>
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Color Change</h3>
-            <div className="flex flex-wrap gap-3">
-              {rules.selectColor.colorOptions && rules.selectColor.colorOptions.map((colorObj) => {
-                // Determine if this color is currently active for all meshes (or just check the first one)
-                const firstMesh = rules.selectColor.targetedMeshNames[0];
-                const isSelected = firstMesh && design3dManager.configuratorStoreManager.selectedOptions[firstMesh] === colorObj.hex;
-                
-                return (
-                  <button
-                    key={colorObj.hex}
-                    onClick={() => handleGlobalColorChange(colorObj.hex)}
-                    className={`w-10 h-10 rounded-full border-2 ${
-                      isSelected ? 'border-indigo-600 scale-110 shadow-md' : 'border-gray-200'
-                    } shadow-sm hover:scale-110 transition-all duration-200 ease-in-out`}
-                    style={{ backgroundColor: colorObj.hex }}
-                    title={colorObj.name}
-                    aria-label={`Select ${colorObj.name}`}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          <ColorChangeComponent />
         ) : rules?.areas ? (
           // Fallback for old schema
           rules.areas.map((area, idx) => (

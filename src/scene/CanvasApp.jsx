@@ -24,7 +24,24 @@ const CanvasApp = observer(() => {
       <Canvas shadows camera={{ position: [0, 2, 5], fov: 50 }}>
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-        <Environment preset="city" />
+        
+        {design3dManager.environmentStoreManager.envFileName ? (
+          <Environment 
+            files={design3dManager.environmentStoreManager.envFileName.startsWith('http') 
+              ? design3dManager.environmentStoreManager.envFileName 
+              : `/${design3dManager.environmentStoreManager.envFileName}`} 
+            background={true}
+            backgroundIntensity={design3dManager.environmentStoreManager.intensity}
+            environmentIntensity={design3dManager.environmentStoreManager.intensity}
+            environmentRotation={[
+              design3dManager.environmentStoreManager.rotation.x, 
+              design3dManager.environmentStoreManager.rotation.y, 
+              design3dManager.environmentStoreManager.rotation.z
+            ]}
+          />
+        ) : (
+          <Environment preset="city" background={true} />
+        )}
         
         <Suspense fallback={<CanvasLoader />}>
           <Center>
