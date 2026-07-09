@@ -62,8 +62,21 @@ class LeftSideStore {
         const configuratorManager = this.designManager.rootStore.design3dManager.configuratorStoreManager;
         configuratorManager.clearConfigurations();
 
-        // Detect GLB Model URL: environments.file or modelMediaId or glbUrl
-        const glbUrl = productDetails.environments?.file || productDetails.modelMediaId || productDetails.glbUrl || null;
+        // Detect GLB Model URL: prioritize CDN HTTP URLs over raw shopify GIDs
+        let glbUrl = null;
+        const envFile = productDetails.environments?.file;
+        const modelMediaId = productDetails.modelMediaId;
+        const backupUrl = productDetails.glbUrl;
+
+        if (modelMediaId && modelMediaId.startsWith('http')) {
+          glbUrl = modelMediaId;
+        } else if (backupUrl && backupUrl.startsWith('http')) {
+          glbUrl = backupUrl;
+        } else if (envFile && envFile.startsWith('http')) {
+          glbUrl = envFile;
+        } else {
+          glbUrl = modelMediaId || backupUrl || envFile || null;
+        }
         
         if (glbUrl) {
           configuratorManager.setGlbUrl(glbUrl);
@@ -72,20 +85,22 @@ class LeftSideStore {
           configuratorManager.setGlbUrl(null);
         }
         
-        // Save camera options: camera.position maps to defaultAngle [pitch, yaw, roll]
+        // Save camera options: cameraAngle.defaultAngle or camera.position maps to defaultAngle [pitch, yaw, roll]
         const cameraAngle = {
-          defaultAngle: productDetails.camera?.position || [0, 90, 0],
+          defaultAngle: productDetails.cameraAngle?.defaultAngle || productDetails.camera?.position || [0, 90, 0],
           zoomLimit: productDetails.cameraAngle?.zoomLimit || [0.5, 4]
         };
         configuratorManager.setCameraAngle(cameraAngle);
 
         // Load mesh customizer configurations: colors and textures
-        configuratorManager.setMeshColorsRules(productDetails.mesh || []);
-        configuratorManager.setMeshTexturesRules(productDetails.textures || []);
+        const meshRules = Array.isArray(productDetails.mesh) ? productDetails.mesh : [];
+        const textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
+        configuratorManager.setMeshColorsRules(meshRules);
+        configuratorManager.setMeshTexturesRules(textureRules);
         
         // Pass environment rules
         const envManager = this.designManager.rootStore.design3dManager.environmentStoreManager;
-        envManager.setEnvironmentRules(productDetails.environments || null);
+        envManager.setEnvironmentRules(productDetails.environment || productDetails.environments || null);
         
         this.designManager.rightSideStore.setIsLoading(false);
       });

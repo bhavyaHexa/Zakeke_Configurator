@@ -31,7 +31,7 @@ class ConfiguratorStoreManager {
   }
 
   setMeshColorsRules(meshColorsRules) {
-    this.meshColorsRules = meshColorsRules || [];
+    this.meshColorsRules = Array.isArray(meshColorsRules) ? meshColorsRules : [];
     
     // Initialize default color selections
     const newColors = { ...this.selectedOptions };
@@ -44,7 +44,7 @@ class ConfiguratorStoreManager {
   }
 
   setMeshTexturesRules(meshTexturesRules) {
-    this.meshTexturesRules = meshTexturesRules || [];
+    this.meshTexturesRules = Array.isArray(meshTexturesRules) ? meshTexturesRules : [];
   }
 
   setOption(meshName, colorHex) {

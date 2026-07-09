@@ -7,8 +7,8 @@ const UIOverlay = observer(() => {
   const { designManager, design3dManager } = useMainContext();
   const configStore = design3dManager.configuratorStoreManager;
   
-  const meshColorsRules = configStore.meshColorsRules || [];
-  const meshTexturesRules = configStore.meshTexturesRules || [];
+  const meshColorsRules = Array.isArray(configStore.meshColorsRules) ? configStore.meshColorsRules : [];
+  const meshTexturesRules = Array.isArray(configStore.meshTexturesRules) ? configStore.meshTexturesRules : [];
 
   // Identify all meshes configured with color and/or texture custom options
   const customizableMeshes = Array.from(new Set([

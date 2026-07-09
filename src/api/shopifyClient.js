@@ -19,11 +19,11 @@ export async function fetchProductWith3DMedia(id) {
     const json = await response.json();
     console.log("Fetch Product Details Response:", json);
 
-    if (!response.ok || !json.success) {
+    if (!response.ok) {
       throw new Error(json.message || `Failed to fetch product with status ${response.status}`);
     }
 
-    return json.data;
+    return json.data !== undefined ? json.data : json;
   } catch (error) {
     console.error(`Error fetching product details for ID ${id}:`, error);
     throw error;
@@ -52,7 +52,7 @@ export async function fetchAllProducts() {
       throw new Error(`Failed to fetch products with status ${response.status}`);
     }
 
-    return json.products || [];
+    return json.data?.products ?? json.products ?? (Array.isArray(json) ? json : []);
   } catch (error) {
     console.error('Error fetching all products:', error);
     throw error;

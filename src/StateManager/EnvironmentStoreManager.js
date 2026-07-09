@@ -17,8 +17,7 @@ class EnvironmentStoreManager {
 
   setEnvironmentRules(environments) {
     if (environments) {
-      // In the new schema, environments.file represents the environment URL/Preset
-      this.lightMode = environments.file || 'city';
+      this.lightMode = environments.lightMode || environments.file || 'city';
       this.intensity = environments.intensity ?? 1.0;
       this.rotation = environments.rotation || { x: 0, y: 0, z: 0 };
       this.shadows = environments.shadows ?? true;

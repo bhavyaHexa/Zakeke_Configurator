@@ -73,9 +73,11 @@ const CanvasApp = observer(() => {
   const shadows = envStore.shadows ?? true;
   const lightMode = envStore.lightMode || 'city';
 
-  // Determine environment file or preset
-  const isUrl = lightMode.startsWith('http') || lightMode.endsWith('.hdr') || lightMode.endsWith('.exr');
-  const preset = !isUrl ? (PRESET_MAP[lightMode.toLowerCase()] || lightMode) : null;
+  // Determine environment file or preset (must be an image or HDR/EXR, not a .glb model)
+  const isUrl = lightMode.startsWith('http') && 
+                 (lightMode.endsWith('.hdr') || 
+                  lightMode.endsWith('.exr'));
+  const preset = !isUrl ? (PRESET_MAP[lightMode.toLowerCase()] || 'city') : null;
 
   // Zoom Limit bounds from cameraAngle config
   const minZoom = configStore.cameraAngle?.zoomLimit?.[0] ?? 2;
