@@ -115,8 +115,25 @@ class LeftSideStore {
 
         // Load mesh customizer configurations: colors and textures
         const meshRules = Array.isArray(productDetails.mesh) ? productDetails.mesh : [];
-        const textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
-        design3d.colorChangeStoreManager.setMeshColorsRules(meshRules);
+        
+        const colorRules = meshRules.map(r => ({
+          name: r.name,
+          colors: r.colors || []
+        }));
+
+        let textureRules = [];
+        if (meshRules.some(r => r.textures && r.textures.length > 0)) {
+          textureRules = meshRules
+            .map(r => ({
+              name: r.name,
+              files: r.textures || []
+            }))
+            .filter(r => r.files.length > 0);
+        } else {
+          textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
+        }
+
+        design3d.colorChangeStoreManager.setMeshColorsRules(colorRules);
         design3d.colorChangeStoreManager.setMeshTexturesRules(textureRules);
         
         // Pass environment rules
