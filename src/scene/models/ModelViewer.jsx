@@ -79,7 +79,7 @@ const ModelViewer = observer(() => {
   if (!glbUrl) return null;
 
   return (
-    <primitive object={clonedScene} scale={[1, 1, 1]} position={[0, -1, 0]} />
+    <primitive object={clonedScene} />
   );
 });
 

@@ -126,7 +126,12 @@ const CanvasApp = observer(() => {
       <Canvas 
         key={glbUrl || 'empty'}
         shadows={shadows} 
-        camera={{ position: [0, 2, 5], fov: 50 }}
+        camera={{
+          position: cameraStore.cameraAngle?.position || [0, 2, 5],
+          fov: cameraStore.cameraAngle?.fov || 50,
+          near: cameraStore.cameraAngle?.near || 0.1,
+          far: cameraStore.cameraAngle?.far || 1000
+        }}
       >
         <ambientLight intensity={0.5 * intensity} />
         <directionalLight 
@@ -138,7 +143,7 @@ const CanvasApp = observer(() => {
         {isUrl ? (
           <Environment 
             files={cleanUrl} 
-            background={true}
+            background={false}
             backgroundIntensity={intensity}
             environmentIntensity={intensity}
             rotation={envRotation}
@@ -146,7 +151,7 @@ const CanvasApp = observer(() => {
         ) : (
           <Environment 
             preset={preset} 
-            background={true}
+            background={false}
             backgroundIntensity={intensity}
             environmentIntensity={intensity}
             rotation={envRotation}
@@ -154,15 +159,18 @@ const CanvasApp = observer(() => {
         )}
         
         <Suspense fallback={<CanvasLoader />}>
-          <Center>
-            {glbUrl ? (
-              <ModelViewer />
-            ) : null}
-          </Center>
+          {glbUrl ? (
+            <ModelViewer />
+          ) : null}
         </Suspense>
 
         <CameraController />
-        <OrbitControls makeDefault minDistance={minZoom} maxDistance={maxZoom} />
+        <OrbitControls 
+          makeDefault 
+          minDistance={minZoom} 
+          maxDistance={maxZoom} 
+          target={cameraStore.cameraAngle?.target || [0, 0, 0]}
+        />
       </Canvas>
     </div>
   );
