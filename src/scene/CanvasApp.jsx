@@ -32,30 +32,59 @@ const PRESET_MAP = {
 
 // Controller to position and update camera based on backend configurations
 const CameraController = observer(() => {
-  const { design3dManager } = useMainContext();
+  const rootStore = useMainContext();
+  const design3dManager = rootStore.design3dManager;
   const { camera, controls } = useThree();
-  const cameraAngle = design3dManager.configuratorStoreManager.cameraAngle;
+  const cameraAngle = design3dManager.cameraStoreManager.cameraAngle;
 
   useEffect(() => {
-    if (cameraAngle && cameraAngle.defaultAngle) {
-      const [pitch, yaw, roll] = cameraAngle.defaultAngle;
-      
-      // Let's assume a default camera distance of 5 units
-      const radius = 5;
-      const pitchRad = (pitch * Math.PI) / 180;
-      const yawRad = (yaw * Math.PI) / 180;
-      
-      const x = radius * Math.sin(yawRad) * Math.cos(pitchRad);
-      const y = radius * Math.sin(pitchRad);
-      const z = radius * Math.cos(yawRad) * Math.cos(pitchRad);
-      
-      camera.position.set(x, y, z);
-      
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
-      } else {
-        camera.lookAt(0, 0, 0);
+    if (cameraAngle) {
+      console.log("CameraController: cameraAngle config values:", {
+        fov: cameraAngle.fov,
+        near: cameraAngle.near,
+        far: cameraAngle.far,
+        position: cameraAngle.position,
+        target: cameraAngle.target,
+        maxDim: cameraAngle.maxDim,
+        maxDistance: cameraAngle.maxDistance,
+        minDistance: cameraAngle.minDistance
+      });
+
+      if (cameraAngle.position && cameraAngle.target) {
+        // Set exact camera coordinates
+        camera.position.set(cameraAngle.position[0], cameraAngle.position[1], cameraAngle.position[2]);
+        if (cameraAngle.fov) camera.fov = cameraAngle.fov;
+        if (cameraAngle.near) camera.near = cameraAngle.near;
+        if (cameraAngle.far) camera.far = cameraAngle.far;
+        camera.updateProjectionMatrix();
+
+        if (controls) {
+          controls.target.set(cameraAngle.target[0], cameraAngle.target[1], cameraAngle.target[2]);
+          if (cameraAngle.minDistance) controls.minDistance = cameraAngle.minDistance;
+          if (cameraAngle.maxDistance) controls.maxDistance = cameraAngle.maxDistance;
+          controls.update();
+        } else {
+          camera.lookAt(cameraAngle.target[0], cameraAngle.target[1], cameraAngle.target[2]);
+        }
+      } else if (cameraAngle.defaultAngle) {
+        // Fallback pitch/yaw math
+        const [pitch, yaw, roll] = cameraAngle.defaultAngle;
+        const radius = 5;
+        const pitchRad = (pitch * Math.PI) / 180;
+        const yawRad = (yaw * Math.PI) / 180;
+        
+        const x = radius * Math.sin(yawRad) * Math.cos(pitchRad);
+        const y = radius * Math.sin(pitchRad);
+        const z = radius * Math.cos(yawRad) * Math.cos(pitchRad);
+        
+        camera.position.set(x, y, z);
+        
+        if (controls) {
+          controls.target.set(0, 0, 0);
+          controls.update();
+        } else {
+          camera.lookAt(0, 0, 0);
+        }
       }
     }
   }, [cameraAngle, camera, controls]);
@@ -64,9 +93,11 @@ const CameraController = observer(() => {
 });
 
 const CanvasApp = observer(() => {
-  const { design3dManager } = useMainContext();
+  const rootStore = useMainContext();
+  const design3dManager = rootStore.design3dManager;
   const envStore = design3dManager.environmentStoreManager;
   const configStore = design3dManager.configuratorStoreManager;
+  const cameraStore = design3dManager.cameraStoreManager;
 
   const glbUrl = configStore.glbUrl;
   const intensity = envStore.intensity ?? 1;
@@ -74,14 +105,15 @@ const CanvasApp = observer(() => {
   const lightMode = envStore.lightMode || 'city';
 
   // Determine environment file or preset (must be an image or HDR/EXR, not a .glb model)
+  const cleanUrl = lightMode.split('?')[0];
   const isUrl = lightMode.startsWith('http') && 
-                 (lightMode.endsWith('.hdr') || 
-                  lightMode.endsWith('.exr'));
+                 (cleanUrl.toLowerCase().endsWith('.hdr') || 
+                  cleanUrl.toLowerCase().endsWith('.exr'));
   const preset = !isUrl ? (PRESET_MAP[lightMode.toLowerCase()] || 'city') : null;
 
   // Zoom Limit bounds from cameraAngle config
-  const minZoom = configStore.cameraAngle?.zoomLimit?.[0] ?? 2;
-  const maxZoom = configStore.cameraAngle?.zoomLimit?.[1] ?? 10;
+  const minZoom = cameraStore.cameraAngle?.zoomLimit?.[0] ?? 2;
+  const maxZoom = cameraStore.cameraAngle?.zoomLimit?.[1] ?? 10;
 
   const envRotation = [
     envStore.rotation?.x || 0,
@@ -105,7 +137,7 @@ const CanvasApp = observer(() => {
         
         {isUrl ? (
           <Environment 
-            files={lightMode} 
+            files={cleanUrl} 
             background={true}
             backgroundIntensity={intensity}
             environmentIntensity={intensity}

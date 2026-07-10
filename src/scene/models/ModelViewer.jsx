@@ -7,8 +7,10 @@ import { TextureLoader } from 'three';
 const textureLoader = new TextureLoader();
 
 const ModelViewer = observer(() => {
-  const { design3dManager } = useMainContext();
-  const { glbUrl, selectedOptions, selectedTextures } = design3dManager.configuratorStoreManager;
+  const rootStore = useMainContext();
+  const design3dManager = rootStore.design3dManager;
+  const { glbUrl } = design3dManager.configuratorStoreManager;
+  const { selectedOptions, selectedTextures } = design3dManager.colorChangeStoreManager;
 
   // useGLTF relies on Suspense, so this component will suspend if it's fetching the .glb
   const { scene } = useGLTF(glbUrl || '');

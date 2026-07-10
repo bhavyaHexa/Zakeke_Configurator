@@ -3,8 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { useMainContext } from '../../context/MainContextProvider';
 
 const ColorChangeComponent = observer(() => {
-  const { design3dManager } = useMainContext();
-  const rules = design3dManager.configuratorStoreManager.configurationRules;
+  const rootStore = useMainContext();
+  const design3dManager = rootStore.design3dManager;
+  const rules = design3dManager.colorChangeStoreManager.configurationRules;
 
   // Render nothing if there is no selectColor configuration
   if (!rules?.selectColor) return null;
@@ -12,7 +13,7 @@ const ColorChangeComponent = observer(() => {
   const handleGlobalColorChange = (color) => {
     if (rules.selectColor.targetedMeshNames) {
       rules.selectColor.targetedMeshNames.forEach(meshName => {
-        design3dManager.configuratorStoreManager.setOption(meshName, color);
+        design3dManager.colorChangeStoreManager.setOption(meshName, color);
       });
     }
   };
@@ -24,7 +25,7 @@ const ColorChangeComponent = observer(() => {
         {rules.selectColor.colorOptions && rules.selectColor.colorOptions.map((colorObj) => {
           // Determine if this color is currently active for all meshes (or just check the first one)
           const firstMesh = rules.selectColor.targetedMeshNames[0];
-          const isSelected = firstMesh && design3dManager.configuratorStoreManager.selectedOptions[firstMesh] === colorObj.hex;
+          const isSelected = firstMesh && design3dManager.colorChangeStoreManager.selectedOptions[firstMesh] === colorObj.hex;
           
           return (
             <button

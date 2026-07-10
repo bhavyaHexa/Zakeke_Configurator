@@ -1,10 +1,10 @@
 import { makeAutoObservable } from 'mobx';
 
-class ConfiguratorStoreManager {
+class CameraStoreManager {
   design3dManager;
 
-  // Active Configuration State
-  glbUrl = null;
+  // Camera settings
+  cameraAngle = null;
 
   constructor(design3dManager) {
     this.design3dManager = design3dManager;
@@ -13,13 +13,13 @@ class ConfiguratorStoreManager {
     });
   }
 
-  setGlbUrl(url) {
-    this.glbUrl = url;
+  setCameraAngle(cameraAngle) {
+    this.cameraAngle = cameraAngle;
   }
 
   clearConfigurations() {
-    this.glbUrl = null;
+    this.cameraAngle = null;
   }
 }
 
-export default ConfiguratorStoreManager;
+export default CameraStoreManager;

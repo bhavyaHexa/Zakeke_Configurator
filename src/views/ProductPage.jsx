@@ -4,11 +4,13 @@ import { useMainContext } from '../context/MainContextProvider';
 import CanvasApp from '../scene/CanvasApp';
 
 const UIOverlay = observer(() => {
-  const { designManager, design3dManager } = useMainContext();
-  const configStore = design3dManager.configuratorStoreManager;
+  const rootStore = useMainContext();
+  const designManager = rootStore.designManager;
+  const design3dManager = rootStore.design3dManager;
+  const colorStore = design3dManager.colorChangeStoreManager;
   
-  const meshColorsRules = Array.isArray(configStore.meshColorsRules) ? configStore.meshColorsRules : [];
-  const meshTexturesRules = Array.isArray(configStore.meshTexturesRules) ? configStore.meshTexturesRules : [];
+  const meshColorsRules = Array.isArray(colorStore.meshColorsRules) ? colorStore.meshColorsRules : [];
+  const meshTexturesRules = Array.isArray(colorStore.meshTexturesRules) ? colorStore.meshTexturesRules : [];
 
   // Identify all meshes configured with color and/or texture custom options
   const customizableMeshes = Array.from(new Set([
@@ -49,11 +51,11 @@ const UIOverlay = observer(() => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Colors</span>
                   <div className="flex flex-wrap gap-2">
                     {colorRule.colors.map((colorObj) => {
-                      const isSelected = configStore.selectedOptions[meshName] === colorObj.hexCode;
+                      const isSelected = colorStore.selectedOptions[meshName] === colorObj.hexCode;
                       return (
                         <button
                           key={colorObj.hexCode}
-                          onClick={() => configStore.setOption(meshName, colorObj.hexCode)}
+                          onClick={() => colorStore.setOption(meshName, colorObj.hexCode)}
                           className={`w-9 h-9 rounded-full border-2 ${
                             isSelected 
                               ? 'border-indigo-600 scale-110 shadow-md ring-2 ring-indigo-200' 
@@ -74,11 +76,11 @@ const UIOverlay = observer(() => {
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Textures</span>
                   <div className="grid grid-cols-2 gap-2">
                     {textureRule.files.map((fileObj) => {
-                      const isSelected = configStore.selectedTextures[meshName] === fileObj.url;
+                      const isSelected = colorStore.selectedTextures[meshName] === fileObj.url;
                       return (
                         <button
                           key={fileObj.url}
-                          onClick={() => configStore.setTextureOption(meshName, fileObj.url)}
+                          onClick={() => colorStore.setTextureOption(meshName, fileObj.url)}
                           className={`px-3 py-2 text-xs font-semibold rounded-lg border text-left truncate transition-all duration-150 cursor-pointer ${
                             isSelected 
                               ? 'bg-indigo-50 border-indigo-500 text-indigo-700 font-bold shadow-sm' 
@@ -128,7 +130,8 @@ const ApiLoader = () => (
 );
 
 const ProductSidebar = observer(() => {
-  const { designManager } = useMainContext();
+  const rootStore = useMainContext();
+  const designManager = rootStore.designManager;
 
   return (
     <div className="absolute top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-md shadow-2xl p-6 flex flex-col pointer-events-auto border-r border-gray-100 overflow-y-auto">
@@ -166,7 +169,8 @@ const ProductSidebar = observer(() => {
 });
 
 const ProductPage = observer(() => {
-  const { designManager } = useMainContext();
+  const rootStore = useMainContext();
+  const designManager = rootStore.designManager;
 
   useEffect(() => {
     designManager.leftSideStore.fetchAllProducts();
