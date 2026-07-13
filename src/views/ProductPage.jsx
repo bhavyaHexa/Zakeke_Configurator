@@ -123,32 +123,8 @@ const ProductPage = observer(() => {
   const colorStore = design3dManager.colorChangeStoreManager;
   const envStore = design3dManager.environmentStoreManager;
 
-  const [activeColorMesh, setActiveColorMesh] = useState('');
-  const [activeTextureMesh, setActiveTextureMesh] = useState('');
-
-  // Extract color/texture meshes dynamically from active rules
-  const colorMeshes = colorStore.meshColorsRules.map(r => r.name);
-  const textureMeshes = colorStore.meshTexturesRules.map(r => r.name);
-
-  useEffect(() => {
-    if (colorMeshes.length > 0) {
-      if (!colorMeshes.includes(activeColorMesh)) {
-        setActiveColorMesh(colorMeshes[0]);
-      }
-    } else {
-      setActiveColorMesh('');
-    }
-  }, [colorStore.meshColorsRules]);
-
-  useEffect(() => {
-    if (textureMeshes.length > 0) {
-      if (!textureMeshes.includes(activeTextureMesh)) {
-        setActiveTextureMesh(textureMeshes[0]);
-      }
-    } else {
-      setActiveTextureMesh('');
-    }
-  }, [colorStore.meshTexturesRules]);
+  const [isColorSectionOpen, setIsColorSectionOpen] = useState(false);
+  const [isTextureSectionOpen, setIsTextureSectionOpen] = useState(false);
 
   useEffect(() => {
     designManager.leftSideStore.fetchAllProducts();
@@ -157,24 +133,12 @@ const ProductPage = observer(() => {
   const productList = designManager.leftSideStore.productList;
   const activeProductId = designManager.leftSideStore.activeProductId;
 
-  const targetColorMesh = activeColorMesh || colorMeshes[0] || '';
-  const colorRule = colorStore.meshColorsRules.find(r => r.name === targetColorMesh);
-  const colors = colorRule?.colors || [];
-
-  const targetTextureMesh = activeTextureMesh || textureMeshes[0] || '';
-  const textureRule = colorStore.meshTexturesRules.find(r => r.name === targetTextureMesh);
-  const textures = textureRule?.files || [];
-
-  const handleColorSelect = (hex) => {
-    if (targetColorMesh) {
-      colorStore.setOption(targetColorMesh, hex);
-    }
+  const handleColorSelect = (meshName, hex) => {
+    colorStore.setOption(meshName, hex);
   };
 
-  const handleTextureSelect = (textureUrl) => {
-    if (targetTextureMesh) {
-      colorStore.setTextureOption(targetTextureMesh, textureUrl);
-    }
+  const handleTextureSelect = (meshName, textureUrl) => {
+    colorStore.setTextureOption(meshName, textureUrl);
   };
 
 
@@ -241,123 +205,126 @@ const ProductPage = observer(() => {
           {/* Section: Color Options */}
           {colorStore.meshColorsRules.length > 0 && (
             <div className="mb-6 border-t border-[#E9E4DC] pt-5">
-              <div className="flex items-center justify-between mb-3.5">
-                <h2 className="text-[10px] font-extrabold text-[#8A7B68] uppercase tracking-[0.2em]">Color</h2>
-                
-                {/* Part selector segmented buttons */}
-                {colorMeshes.length > 1 && (
-                  <div className="flex gap-1 bg-[#FAF8F5] border border-[#E9E4DC] p-0.5 rounded-lg">
-                    {colorMeshes.map((meshName) => {
-                      const isMeshActive = targetColorMesh === meshName;
-                      return (
-                        <button
-                          key={meshName}
-                          onClick={() => setActiveColorMesh(meshName)}
-                          className={`text-[9px] font-bold px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                            isMeshActive 
-                              ? 'bg-[#8A7B68] text-white' 
-                              : 'text-[#8A7B68] hover:text-[#5C4F43]'
-                          }`}
-                        >
-                          {meshName}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => setIsColorSectionOpen(!isColorSectionOpen)}
+                className="flex items-center justify-between w-full text-left uppercase tracking-[0.2em] font-extrabold text-[10px] text-[#8A7B68] cursor-pointer hover:text-[#5C4F43] transition-colors mb-1"
+              >
+                <span>Change Color</span>
+                <svg className={`w-3.5 h-3.5 text-[#8A7B68] transition-transform duration-200 ${isColorSectionOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
 
-              {/* Colors Swatches Grid */}
-              <div className="grid grid-cols-5 gap-2">
-                {colors.map((colorObj) => {
-                  const isColorSelected = colorStore.selectedOptions[targetColorMesh] === colorObj.hexCode;
-                  return (
-                    <button
-                      key={colorObj.hexCode}
-                      onClick={() => handleColorSelect(colorObj.hexCode)}
-                      className="flex flex-col items-center gap-1.5 cursor-pointer group"
-                    >
-                      <div 
-                        className={`w-11 h-11 rounded-xl shadow-sm border transition-all ${
-                          isColorSelected 
-                            ? 'border-[#A38865] scale-105 ring-2 ring-[#E9E4DC]' 
-                            : 'border-[#E9E4DC] hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: colorObj.hexCode }}
-                      />
-                      <span className="text-[9px] font-bold text-[#8A7B68] truncate w-full text-center group-hover:text-[#5C4F43]">
-                        {colorObj.name}
-                      </span>
-                    </button>
-                  );
-                })}
-                {colors.length === 0 && (
-                  <div className="col-span-5 text-center text-xs italic text-[#8A7B68]">
-                    No mesh colors configured.
-                  </div>
-                )}
-              </div>
+              {isColorSectionOpen && (
+                <div className="mt-4 space-y-5">
+                  {colorStore.meshColorsRules.map((rule) => {
+                    const meshName = rule.name;
+                    const meshColors = rule.colors || [];
+                    return (
+                      <div key={meshName} className="space-y-2">
+                        {/* Mesh component name with bullet point */}
+                        <div className="flex items-center gap-2 pl-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#A38865]" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4F43]">
+                            {meshName}
+                          </span>
+                        </div>
+                        
+                        {/* Colors Swatches Grid */}
+                        <div className="grid grid-cols-5 gap-2">
+                          {meshColors.map((colorObj) => {
+                            const isColorSelected = colorStore.selectedOptions[meshName] === colorObj.hexCode;
+                            return (
+                              <button
+                                key={colorObj.hexCode}
+                                onClick={() => handleColorSelect(meshName, colorObj.hexCode)}
+                                className="flex flex-col items-center gap-1.5 cursor-pointer group"
+                              >
+                                <div 
+                                  className={`w-11 h-11 rounded-xl shadow-sm border transition-all ${
+                                    isColorSelected 
+                                      ? 'border-[#A38865] scale-105 ring-2 ring-[#E9E4DC]' 
+                                      : 'border-[#E9E4DC] hover:scale-105'
+                                  }`}
+                                  style={{ backgroundColor: colorObj.hexCode }}
+                                />
+                                <span className="text-[9px] font-bold text-[#8A7B68] truncate w-full text-center group-hover:text-[#5C4F43]">
+                                  {colorObj.name}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
           {/* Section: Texture Options */}
           {colorStore.meshTexturesRules.length > 0 && (
             <div className="mb-6 border-t border-[#E9E4DC] pt-5">
-              <div className="flex items-center justify-between mb-3.5">
-                <h2 className="text-[10px] font-extrabold text-[#8A7B68] uppercase tracking-[0.2em]">Texture</h2>
-                
-                {/* Part selector segmented buttons */}
-                {textureMeshes.length > 1 && (
-                  <div className="flex gap-1 bg-[#FAF8F5] border border-[#E9E4DC] p-0.5 rounded-lg">
-                    {textureMeshes.map((meshName) => {
-                      const isMeshActive = targetTextureMesh === meshName;
-                      return (
-                        <button
-                          key={meshName}
-                          onClick={() => setActiveTextureMesh(meshName)}
-                          className={`text-[9px] font-bold px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                            isMeshActive 
-                              ? 'bg-[#8A7B68] text-white' 
-                              : 'text-[#8A7B68] hover:text-[#5C4F43]'
-                          }`}
-                        >
-                          {meshName}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={() => setIsTextureSectionOpen(!isTextureSectionOpen)}
+                className="flex items-center justify-between w-full text-left uppercase tracking-[0.2em] font-extrabold text-[10px] text-[#8A7B68] cursor-pointer hover:text-[#5C4F43] transition-colors mb-1"
+              >
+                <span>Change Texture</span>
+                <svg className={`w-3.5 h-3.5 text-[#8A7B68] transition-transform duration-200 ${isTextureSectionOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
 
-              {/* Texture Swatches Grid */}
-              <div className="grid grid-cols-5 gap-2">
-                {textures.map((swatch) => {
-                  const isTextureSelected = colorStore.selectedTextures[targetTextureMesh] === swatch.url;
-                  return (
-                    <button
-                      key={swatch.url}
-                      onClick={() => handleTextureSelect(swatch.url)}
-                      className="flex flex-col items-center gap-1.5 cursor-pointer group"
-                    >
-                      <div 
-                        className={`w-11 h-11 rounded-xl shadow-sm border transition-all ${
-                          isTextureSelected 
-                            ? 'border-[#A38865] scale-105 ring-2 ring-[#E9E4DC]' 
-                            : 'border-[#E9E4DC] hover:scale-105'
-                        }`}
-                        style={{ 
-                          backgroundImage: `url(${swatch.url})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
-                        }}
-                      />
-                      <span className="text-[9px] font-bold text-[#8A7B68] truncate w-full text-center group-hover:text-[#5C4F43]">
-                        {swatch.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              {isTextureSectionOpen && (
+                <div className="mt-4 space-y-5">
+                  {colorStore.meshTexturesRules.map((rule) => {
+                    const meshName = rule.name;
+                    const meshTextures = rule.files || [];
+                    return (
+                      <div key={meshName} className="space-y-2">
+                        {/* Mesh component name with bullet point */}
+                        <div className="flex items-center gap-2 pl-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#A38865]" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C4F43]">
+                            {meshName}
+                          </span>
+                        </div>
+                        
+                        {/* Texture Swatches Grid */}
+                        <div className="grid grid-cols-5 gap-2">
+                          {meshTextures.map((swatch) => {
+                            const isTextureSelected = colorStore.selectedTextures[meshName] === swatch.url;
+                            return (
+                              <button
+                                key={swatch.url}
+                                onClick={() => handleTextureSelect(meshName, swatch.url)}
+                                className="flex flex-col items-center gap-1.5 cursor-pointer group"
+                              >
+                                <div 
+                                  className={`w-11 h-11 rounded-xl shadow-sm border transition-all ${
+                                    isTextureSelected 
+                                      ? 'border-[#A38865] scale-105 ring-2 ring-[#E9E4DC]' 
+                                      : 'border-[#E9E4DC] hover:scale-105'
+                                  }`}
+                                  style={{ 
+                                    backgroundImage: `url(${swatch.url})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center'
+                                  }}
+                                />
+                                <span className="text-[9px] font-bold text-[#8A7B68] truncate w-full text-center group-hover:text-[#5C4F43]">
+                                  {swatch.name}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
