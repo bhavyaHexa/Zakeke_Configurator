@@ -6,6 +6,8 @@ class ColorChangeStoreManager {
   // Active Configuration State
   selectedOptions = {};   // meshName -> colorHex
   selectedTextures = {};  // meshName -> textureUrl
+  roughness = 0.5;
+  opacity = 1.0;
 
   // Configuration rules from the database format
   meshColorsRules = [];    // [{ name, colors: [{ name, hexCode }] }]
@@ -16,6 +18,14 @@ class ColorChangeStoreManager {
     makeAutoObservable(this, {
       design3dManager: false
     });
+  }
+
+  setRoughness(val) {
+    this.roughness = val;
+  }
+
+  setOpacity(val) {
+    this.opacity = val;
   }
 
   setMeshColorsRules(meshColorsRules) {
@@ -33,6 +43,15 @@ class ColorChangeStoreManager {
 
   setMeshTexturesRules(meshTexturesRules) {
     this.meshTexturesRules = Array.isArray(meshTexturesRules) ? meshTexturesRules : [];
+    
+    // Initialize default texture selections
+    const newTextures = { ...this.selectedTextures };
+    this.meshTexturesRules.forEach(rule => {
+      if (rule.files && rule.files.length > 0 && !newTextures[rule.name]) {
+        newTextures[rule.name] = rule.files[0].url;
+      }
+    });
+    this.selectedTextures = newTextures;
   }
 
   setOption(meshName, colorHex) {
@@ -64,7 +83,10 @@ class ColorChangeStoreManager {
     this.selectedTextures = {};
     this.meshColorsRules = [];
     this.meshTexturesRules = [];
+    this.roughness = 0.5;
+    this.opacity = 1.0;
   }
 }
 
 export default ColorChangeStoreManager;
+

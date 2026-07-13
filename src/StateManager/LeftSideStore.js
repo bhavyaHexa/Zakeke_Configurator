@@ -16,18 +16,31 @@ class LeftSideStore {
   async fetchAllProducts() {
     this.designManager.rightSideStore.setIsLoading(true);
     this.designManager.rightSideStore.setApiError(null);
+
     try {
       const products = await fetchAllProducts();
       runInAction(() => {
-        this.productList = products;
+        if (products && products.length > 0) {
+          this.productList = products.map(p => ({
+            ...p,
+            title: p.title,
+            thumbnail: p.thumbnail || null
+          }));
+        } else {
+          this.productList = [];
+        }
+
         this.designManager.rightSideStore.setIsLoading(false);
-        if (products.length > 0 && !this.activeProductId) {
-          this.activeProductId = products[0].id;
-          this.fetchProductData(products[0].id);
+        
+        const defaultProduct = this.productList[0];
+        if (defaultProduct && !this.activeProductId) {
+          this.activeProductId = defaultProduct.id;
+          this.fetchProductData(defaultProduct.id);
         }
       });
     } catch (error) {
       runInAction(() => {
+        this.productList = [];
         this.designManager.rightSideStore.setApiError(error.message || 'Failed to fetch products');
         this.designManager.rightSideStore.setIsLoading(false);
       });
@@ -46,16 +59,29 @@ class LeftSideStore {
     this.designManager.rightSideStore.setApiError(null);
     
     try {
-      const rawData = await fetchProductWith3DMedia(id);
+      let rawData;
+      try {
+        rawData = await fetchProductWith3DMedia(id);
+      } catch (e) {
+        rawData = null;
+      }
       
       runInAction(() => {
-        // Handle database response format where product data could be nested inside a .data property
-        const productDetails = rawData?.data || rawData;
+        let productDetails = rawData?.data || rawData;
         
         if (!productDetails) {
-          throw new Error("No product details found in backend response.");
+          this.designManager.rightSideStore.productTitle = 'No Product';
+          this.designManager.rightSideStore.productDescription = '';
+          this.designManager.rightSideStore.setApiError('No product details found.');
+          const design3d = this.designManager.rootStore.design3dManager;
+          design3d.configuratorStoreManager.clearConfigurations();
+          design3d.colorChangeStoreManager.clearConfigurations();
+          design3d.cameraStoreManager.clearConfigurations();
+          design3d.configuratorStoreManager.setGlbUrl(null);
+          this.designManager.rightSideStore.setIsLoading(false);
+          return;
         }
-
+        
         this.designManager.rightSideStore.productTitle = productDetails.productName || 'Product';
         this.designManager.rightSideStore.productDescription = productDetails.sku ? `SKU: ${productDetails.sku}` : '';
         
@@ -64,26 +90,7 @@ class LeftSideStore {
         design3d.colorChangeStoreManager.clearConfigurations();
         design3d.cameraStoreManager.clearConfigurations();
 
-        // Detect GLB Model URL: prioritize CDN HTTP URLs over raw shopify GIDs
-        let glbUrl = null;
-        const envFile = productDetails.environments?.file;
-        const modelMediaId = productDetails.modelMediaId;
-        const backupUrl = productDetails.glbUrl;
-
-        // Check if envFile is an HDR/EXR environment rather than a GLB model
-        const cleanEnvFile = envFile ? envFile.split('?')[0].toLowerCase() : '';
-        const isEnvAnHdri = cleanEnvFile.endsWith('.hdr') || cleanEnvFile.endsWith('.exr');
-
-        if (modelMediaId && modelMediaId.startsWith('http')) {
-          glbUrl = modelMediaId;
-        } else if (backupUrl && backupUrl.startsWith('http')) {
-          glbUrl = backupUrl;
-        } else if (envFile && envFile.startsWith('http') && !isEnvAnHdri) {
-          glbUrl = envFile;
-        } else {
-          glbUrl = modelMediaId || backupUrl || (!isEnvAnHdri ? envFile : null) || null;
-        }
-        
+        const glbUrl = productDetails.glbUrl;
         if (glbUrl) {
           design3d.configuratorStoreManager.setGlbUrl(glbUrl);
         } else {
@@ -91,7 +98,7 @@ class LeftSideStore {
           design3d.configuratorStoreManager.setGlbUrl(null);
         }
         
-        // Save camera options: support both flat and nested camera configs
+        // Save camera options
         let cameraAngle = null;
         if (productDetails.camera) {
           cameraAngle = {
@@ -107,33 +114,25 @@ class LeftSideStore {
           };
         } else {
           cameraAngle = {
-            defaultAngle: productDetails.cameraAngle?.defaultAngle || [0, 90, 0],
-            zoomLimit: productDetails.cameraAngle?.zoomLimit || [0.5, 4]
+            defaultAngle: [0, 90, 0],
+            zoomLimit: [0.5, 4]
           };
         }
         design3d.cameraStoreManager.setCameraAngle(cameraAngle);
 
-        // Load mesh customizer configurations: colors and textures
+        // Load mesh configurations: colors
         const meshRules = Array.isArray(productDetails.mesh) ? productDetails.mesh : [];
-        
-        const colorRules = meshRules.map(r => ({
-          name: r.name,
-          colors: r.colors || []
-        }));
-
-        let textureRules = [];
-        if (meshRules.some(r => r.textures && r.textures.length > 0)) {
-          textureRules = meshRules
-            .map(r => ({
-              name: r.name,
-              files: r.textures || []
-            }))
-            .filter(r => r.files.length > 0);
-        } else {
-          textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
-        }
+        const colorRules = meshRules
+          .filter(r => r.colors && r.colors.length > 0)
+          .map(r => ({
+            name: r.name,
+            colors: r.colors || []
+          }));
 
         design3d.colorChangeStoreManager.setMeshColorsRules(colorRules);
+
+        // Load dynamic textures
+        const textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
         design3d.colorChangeStoreManager.setMeshTexturesRules(textureRules);
         
         // Pass environment rules
@@ -152,3 +151,4 @@ class LeftSideStore {
 }
 
 export default LeftSideStore;
+

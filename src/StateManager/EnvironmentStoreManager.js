@@ -16,8 +16,8 @@ class EnvironmentStoreManager {
   }
 
   setEnvironmentRules(environments) {
-    if (environments) {
-      this.lightMode = environments.lightMode || environments.file || 'city';
+    if (environments && environments.file && environments.file.startsWith('http')) {
+      this.lightMode = environments.file;
       this.intensity = environments.intensity ?? 1.0;
       this.rotation = environments.rotation || { x: 0, y: 0, z: 0 };
       this.shadows = environments.shadows ?? true;

@@ -122,7 +122,7 @@ const CanvasApp = observer(() => {
   ];
 
   return (
-    <div className="w-full h-full bg-gray-200">
+    <div className="w-full h-full bg-transparent">
       <Canvas 
         key={glbUrl || 'empty'}
         shadows={shadows} 
@@ -133,13 +133,7 @@ const CanvasApp = observer(() => {
           far: cameraStore.cameraAngle?.far || 1000
         }}
       >
-        <ambientLight intensity={0.5 * intensity} />
-        <directionalLight 
-          position={[10, 10, 5]} 
-          intensity={1.0 * intensity} 
-          castShadow={shadows} 
-        />
-        
+
         {isUrl ? (
           <Environment 
             files={cleanUrl} 
