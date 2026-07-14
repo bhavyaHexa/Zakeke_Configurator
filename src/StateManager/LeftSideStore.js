@@ -120,19 +120,45 @@ class LeftSideStore {
         }
         design3d.cameraStoreManager.setCameraAngle(cameraAngle);
 
-        // Load mesh configurations: colors
+        // Load mesh configurations: colors and textures
         const meshRules = Array.isArray(productDetails.mesh) ? productDetails.mesh : [];
+        
         const colorRules = meshRules
           .filter(r => r.colors && r.colors.length > 0)
           .map(r => ({
             name: r.name,
-            colors: r.colors || []
+            colors: r.colors || [],
+            metalnessValue: r.metalnessValue !== undefined ? r.metalnessValue : (r.metallic !== undefined ? r.metallic : 0),
+            roughnessValue: r.roughnessValue !== undefined ? r.roughnessValue : (r.roughness !== undefined ? r.roughness : 0.75),
+            metalnessTexture: r.metalnessTexture ?? r.metallicGlossMapUrl ?? "",
+            roughnessTexture: r.roughnessTexture || "",
+            normalIntensity: r.normalIntensity !== undefined ? r.normalIntensity : 1.0,
+            normalMap: r.normalMap || "",
+            // compatibility
+            metallic: r.metalnessValue !== undefined ? r.metalnessValue : (r.metallic !== undefined ? r.metallic : 0),
+            roughness: r.roughnessValue !== undefined ? r.roughnessValue : (r.roughness !== undefined ? r.roughness : 0.75),
+            metallicGlossMapUrl: r.metalnessTexture ?? r.metallicGlossMapUrl ?? ""
           }));
 
         design3d.colorChangeStoreManager.setMeshColorsRules(colorRules);
 
-        // Load dynamic textures
-        const textureRules = Array.isArray(productDetails.textures) ? productDetails.textures : [];
+        const textureRules = meshRules
+          .filter(r => r.textures && r.textures.length > 0)
+          .map(r => ({
+            name: r.name,
+            files: r.textures || [],
+            metalnessValue: r.metalnessValue !== undefined ? r.metalnessValue : (r.metallic !== undefined ? r.metallic : 0),
+            roughnessValue: r.roughnessValue !== undefined ? r.roughnessValue : (r.roughness !== undefined ? r.roughness : 0.75),
+            metalnessTexture: r.metalnessTexture ?? r.metallicGlossMapUrl ?? "",
+            roughnessTexture: r.roughnessTexture || "",
+            normalIntensity: r.normalIntensity !== undefined ? r.normalIntensity : 1.0,
+            normalMap: r.normalMap || "",
+            // compatibility
+            metallic: r.metalnessValue !== undefined ? r.metalnessValue : (r.metallic !== undefined ? r.metallic : 0),
+            roughness: r.roughnessValue !== undefined ? r.roughnessValue : (r.roughness !== undefined ? r.roughness : 0.75),
+            metallicGlossMapUrl: r.metalnessTexture ?? r.metallicGlossMapUrl ?? ""
+          }));
+
         design3d.colorChangeStoreManager.setMeshTexturesRules(textureRules);
         
         // Pass environment rules

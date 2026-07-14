@@ -84,7 +84,7 @@ const Header = () => {
       {/* Brand Logo */}
       <div className="flex items-center gap-2">
         {SVG_ICONS.logo}
-        <span className="text-sm font-extrabold tracking-[0.25em] text-[#5C4F43]">CONFIGURA</span>
+        <span className="text-sm font-extrabold tracking-[0.25em] text-[#5C4F43]">HEXACODER</span>
       </div>
 
       {/* Main Nav */}
