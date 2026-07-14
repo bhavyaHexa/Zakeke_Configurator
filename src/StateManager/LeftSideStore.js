@@ -146,7 +146,30 @@ class LeftSideStore {
           .filter(r => r.textures && r.textures.length > 0)
           .map(r => ({
             name: r.name,
-            files: r.textures || [],
+            files: (r.textures || []).map(t => {
+              if (t.albedo) {
+                return {
+                  name: t.albedo.name,
+                  url: t.albedo.url,
+                  metalness: t.metalness?.value ?? r.metalnessValue ?? 0.0,
+                  metalnessUrl: t.metalness?.url ?? r.metalnessTexture ?? "",
+                  roughness: t.roughness?.value ?? r.roughnessValue ?? 0.5,
+                  roughnessUrl: t.roughness?.url ?? r.roughnessTexture ?? "",
+                  normalIntensity: t.normal?.value ?? r.normalIntensity ?? 1.0,
+                  normalUrl: t.normal?.url ?? r.normalMap ?? "",
+                };
+              }
+              return {
+                name: t.name,
+                url: t.url,
+                metalness: r.metalnessValue ?? r.metallic ?? 0.0,
+                metalnessUrl: r.metalnessTexture ?? r.metallicGlossMapUrl ?? "",
+                roughness: r.roughnessValue ?? r.roughness ?? 0.5,
+                roughnessUrl: r.roughnessTexture ?? "",
+                normalIntensity: r.normalIntensity ?? 1.0,
+                normalUrl: r.normalMap ?? "",
+              };
+            }),
             metalnessValue: r.metalnessValue !== undefined ? r.metalnessValue : (r.metallic !== undefined ? r.metallic : 0),
             roughnessValue: r.roughnessValue !== undefined ? r.roughnessValue : (r.roughness !== undefined ? r.roughness : 0.75),
             metalnessTexture: r.metalnessTexture ?? r.metallicGlossMapUrl ?? "",
