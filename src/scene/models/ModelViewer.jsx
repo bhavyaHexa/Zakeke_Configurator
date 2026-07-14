@@ -57,10 +57,20 @@ const ModelViewer = observer(() => {
                   (r) => r.name === targetName
                 );
                 if (rule) {
-                  const metalnessValue = rule.metalnessValue !== undefined ? rule.metalnessValue : (rule.metallic !== undefined ? rule.metallic : 0);
-                  const roughnessValue = rule.roughnessValue !== undefined ? rule.roughnessValue : (rule.roughness !== undefined ? rule.roughness : 0.75);
-                  const metalnessTexture = rule.metalnessTexture ?? rule.metallicGlossMapUrl;
-                  const roughnessTexture = rule.roughnessTexture;
+                  const swatch = rule?.colors?.find((c) => c.hexCode === colorHex);
+
+                  const metalnessValue = swatch?.metalness !== undefined ? swatch.metalness :
+                                        (swatch?.metalnessValue !== undefined ? swatch.metalnessValue :
+                                        (rule.metalnessValue !== undefined ? rule.metalnessValue :
+                                        (rule.metallic !== undefined ? rule.metallic : 0)));
+
+                  const roughnessValue = swatch?.roughness !== undefined ? swatch.roughness :
+                                        (swatch?.roughnessValue !== undefined ? swatch.roughnessValue :
+                                        (rule.roughnessValue !== undefined ? rule.roughnessValue :
+                                        (rule.roughness !== undefined ? rule.roughness : 0.75)));
+
+                  const metalnessTexture = swatch?.metalnessUrl || swatch?.metalnessTexture || (rule.metalnessTexture ?? rule.metallicGlossMapUrl);
+                  const roughnessTexture = swatch?.roughnessUrl || swatch?.roughnessTexture || rule.roughnessTexture;
 
                   child.material.roughness = roughnessValue;
                   child.material.metalness = metalnessValue;
@@ -79,13 +89,37 @@ const ModelViewer = observer(() => {
                       child.material.roughnessMap = tex;
                       child.material.needsUpdate = true;
                     });
-                  } else if (metalnessTexture && !rule.roughnessTexture) {
+                  } else if (metalnessTexture && !roughnessTexture) {
                     textureLoader.load(metalnessTexture, (tex) => {
                       child.material.roughnessMap = tex;
                       child.material.needsUpdate = true;
                     });
                   } else {
                     child.material.roughnessMap = null;
+                  }
+
+                  // Apply Normal map and scale/intensity
+                  const normalIntensityVal = swatch?.normalIntensity !== undefined ? swatch.normalIntensity :
+                                             swatch?.normalScale !== undefined ? swatch.normalScale :
+                                             rule?.normalIntensity !== undefined ? rule.normalIntensity :
+                                             1.0;
+
+                  const normalMapUrl = swatch?.normalMap ||
+                                       swatch?.normalUrl ||
+                                       swatch?.normalMapUrl ||
+                                       swatch?.normalTexture ||
+                                       rule?.normalMap;
+
+                  if (normalMapUrl) {
+                    textureLoader.load(normalMapUrl, (tex) => {
+                      tex.wrapS = RepeatWrapping;
+                      tex.wrapT = RepeatWrapping;
+                      child.material.normalMap = tex;
+                      child.material.normalScale.set(normalIntensityVal, normalIntensityVal);
+                      child.material.needsUpdate = true;
+                    });
+                  } else {
+                    child.material.normalMap = null;
                   }
                 }
 
@@ -152,8 +186,17 @@ const ModelViewer = observer(() => {
                   }
 
                   // 4. Apply Normal map and scale/intensity
-                  const normalIntensityVal = rule?.normalIntensity !== undefined ? rule.normalIntensity : 1.0;
-                  const normalMapUrl = rule?.normalMap;
+                  const normalIntensityVal = swatch?.normalIntensity !== undefined ? swatch.normalIntensity :
+                                             swatch?.normalScale !== undefined ? swatch.normalScale :
+                                             rule?.normalIntensity !== undefined ? rule.normalIntensity :
+                                             1.0;
+
+                  const normalMapUrl = swatch?.normalMap ||
+                                       swatch?.normalUrl ||
+                                       swatch?.normalMapUrl ||
+                                       swatch?.normalTexture ||
+                                       rule?.normalMap;
+
                   if (normalMapUrl) {
                     textureLoader.load(normalMapUrl, (tex) => {
                       tex.wrapS = RepeatWrapping;
@@ -174,7 +217,13 @@ const ModelViewer = observer(() => {
         }
       });
     }
-  }, [clonedScene, selectedOptions, selectedTextures]);
+  }, [
+    clonedScene,
+    selectedOptions,
+    selectedTextures,
+    design3dManager.colorChangeStoreManager.meshColorsRules,
+    design3dManager.colorChangeStoreManager.meshTexturesRules
+  ]);
 
   if (!glbUrl) return null;
 
